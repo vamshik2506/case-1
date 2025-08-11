@@ -1,0 +1,365 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: VPC with public/private subnets, IGW, NAT Gateway - Lemolite Dev
+Parameters:
+
+#--------------Environment Name--------------#
+  Environment:       
+    Type: String
+    Default: Dev
+    Description: Enter the name of environment
+    AllowedValues:
+      - Dev
+      - Prod
+
+#--------------VPC Name----------------------#
+  VpcName:
+    Type: String
+    Description: Enter the Vpc name
+    Default: Dev_VPC_Go_Din_Din
+    AllowedValues:
+      - Dev_VPC_Go_Din_Din
+      - Prod_VPC_Go_Din_Din
+
+#--------------VPC CIDR-----------------------#
+  VpcCIDR:
+    Type: String
+    Default: 10.0.0.0/16
+    Description: CIDR block for the VPC
+    AllowedValues:
+      - 10.0.0.0/16
+      - 172.31.0.0/16
+      - 192.168.0.0/16
+
+#--------------Internet Gateway Name---------------#
+  IgwName:
+    Type: String
+    Description: Internet Gateway Name
+    Default: IGW_Dev_GDD
+    AllowedValues:
+      - IGW_Dev_GDD
+      - IGW_Prod_GDD
+
+#--------------NAT Gateway Name---------------#
+  NatName:
+    Type: String
+    Description: NAT Gateway Name
+    Default: NAT_Dev_GDD
+    AllowedValues:
+      - NAT_Dev_GDD
+      - NAT_Prod_GDD
+
+#--------------Public Subnet Name---------------#
+  PublicSubnetname1:
+    Type: String
+    Description: Enter the PublicSubnet1
+    Default: Public_Subnet_1_Dev_GDD
+    AllowedValues:
+      - Public_Subnet_1_Dev_GDD
+      - Public_Subnet_1_Prod_GDD
+
+  PublicSubnetname2:
+    Type: String
+    Description: Enter the PublicSubnet2
+    Default: Public_Subnet_2_Dev_GDD
+    AllowedValues:
+      - Public_Subnet_2_Dev_GDD
+      - Public_Subnet_2_Prod_GDD
+
+  #--------------Private Subnet Name---------------#
+  PrivateSubnetname1:
+    Type: String
+    Description: Enter the PrivateSubnet1
+    Default: Private_Subnet_1_Dev_GDD
+    AllowedValues:
+      - Private_Subnet_1_Dev_GDD
+      - Private_Subnet_1_Prod_GDD
+
+  PrivateSubnetname2:
+    Type: String
+    Description: Enter the PrivateSubnet2
+    Default: Private_Subnet_2_Dev_GDD
+    AllowedValues:
+      - Private_Subnet_2_Dev_GDD
+      - Private_Subnet_2_Prod_GDD
+
+  #--------------Public Subnet CIDR---------------#
+  PublicSubnet1CIDR:
+    Type: String
+    Default: 10.0.1.0/24
+    Description: Enter the Publicsubnet1
+    AllowedValues:
+      - 10.0.1.0/24
+      - 172.31.1.0/24
+      - 192.168.1.0/24
+
+  PublicSubnet2CIDR:
+    Type: String
+    Default: 10.0.2.0/24
+    Description: Enter the Publicsubnet2
+    AllowedValues:
+      - 10.0.2.0/24
+      - 172.31.2.0/24
+      - 192.168.2.0/24
+
+ #--------------Private Subnet CIDR---------------#
+  PrivateSubnet1CIDR:
+    Type: String
+    Default: 10.0.3.0/24
+    Description: Enter the Privatesubnet1
+    AllowedValues:
+      - 10.0.3.0/24
+      - 172.31.3.0/24
+      - 192.168.3.0/24
+
+  PrivateSubnet2CIDR:
+    Type: String
+    Default: 10.0.4.0/24
+    Description: Enter the Privatesubnet2
+    AllowedValues:
+      - 10.0.4.0/24
+      - 172.31.4.0/24
+      - 192.168.4.0/24
+
+ #--------------Public Route Table Name--------------#
+  Publicroutetablename:
+    Type: String
+    Description: Enter the Public route table name
+    Default: Dev_GDD_Public_RT
+    AllowedValues:
+      - Dev_GDD_Public_RT
+      - Prod_GDD_Public_RT
+
+  #-------------Private Route Table Name-------------#
+  Privateroutetablename:
+    Type: String
+    Description: Enter the Private route table name
+    Default: Dev_GDD_RT
+    AllowedValues:
+      - Dev_GDD_RT
+      - Prod_GDD_RT
+
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Label:
+          default: "VPC CIDR Configuration"
+        Parameters:
+          - VpcCIDR
+      - Label:
+          default: "Subnet CIDRs"
+        Parameters:
+          - PublicSubnet1CIDR
+          - PublicSubnet2CIDR
+          - PrivateSubnet1CIDR
+          - PrivateSubnet2CIDR
+    ParameterLabels:
+      VpcCIDR:
+        default: "VPC CIDR Block"
+      PublicSubnet1CIDR:
+        default: "Public Subnet 1 CIDR"
+      PublicSubnet2CIDR:
+        default: "Public Subnet 2 CIDR"
+      PrivateSubnet1CIDR:
+        default: "Private Subnet 1 CIDR"
+      PrivateSubnet2CIDR:
+        default: "Private Subnet 2 CIDR"
+
+Resources:
+
+#--------------VPC-----------------#
+
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !Ref VpcCIDR
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+      Tags:
+        - Key: Name
+          Value: !Ref VpcName
+
+#--------------Internet Gateway------------#
+
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Ref IgwName
+
+  AttachGateway:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref VPC
+      InternetGatewayId: !Ref InternetGateway
+
+
+#--------------Public Subnets-----------------#
+
+  PublicSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Sub "${AWS::Region}a"
+      CidrBlock: !Ref PublicSubnet1CIDR
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Ref PublicSubnetname1
+
+  PublicSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Sub "${AWS::Region}b"
+      CidrBlock: !Ref PublicSubnet2CIDR
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Ref PublicSubnetname2
+
+
+  #--------------Private Subnets-----------------#
+
+  PrivateSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Sub "${AWS::Region}a"
+      CidrBlock: !Ref PrivateSubnet1CIDR
+      Tags:
+        - Key: Name
+          Value: !Ref PrivateSubnetname1
+
+  PrivateSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Sub "${AWS::Region}b"
+      CidrBlock: !Ref PrivateSubnet2CIDR
+      Tags:
+        - Key: Name
+          Value: !Ref PrivateSubnetname2
+
+
+  #--------------Public Route table-----------------#
+
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Ref Publicroutetablename
+
+  PublicRoute:
+    Type: AWS::EC2::Route
+    DependsOn: AttachGateway
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+  PublicSubnet1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnet1
+      RouteTableId: !Ref PublicRouteTable
+
+  PublicSubnet2RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnet2
+      RouteTableId: !Ref PublicRouteTable
+
+  #--------------Elastic IP -----------------#
+
+  ElasticIP:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+      Tags:
+        - Key: Name
+          Value: Dev_GDD_EIP
+
+  #--------------NAT Gateway-----------------#
+
+  NATGateway:
+    Type: AWS::EC2::NatGateway
+    DependsOn:
+      - ElasticIP
+      - PublicSubnet1
+    Properties:
+      AllocationId: !GetAtt ElasticIP.AllocationId
+      SubnetId: !Ref PublicSubnet1
+      Tags:
+        - Key: Name
+          Value: !Ref NatName
+
+  #--------------Private Route table----------------#
+
+  PrivateRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Ref Privateroutetablename
+
+  PrivateRoute:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref NATGateway
+
+  PrivateSubnet1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PrivateSubnet1
+      RouteTableId: !Ref PrivateRouteTable
+
+  PrivateSubnet2RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PrivateSubnet2
+      RouteTableId: !Ref PrivateRouteTable
+
+  #-----------------Outputs-----------------------#
+
+Outputs:
+  VPCID:
+    Description: VPC ID
+    Value: !Ref VPC
+    Export:
+      Name: VpcName
+
+  PublicSubnet1ID:
+    Description: Public Subnet 1
+    Value: !Ref PublicSubnet1
+    Export:
+      Name: Publicsubnet1
+
+  PublicSubnet2ID:
+    Description: Public Subnet 2
+    Value: !Ref PublicSubnet2
+    Export:
+      Name: Publicsubnet2
+
+  PrivateSubnet1ID:
+    Description: Private Subnet 1
+    Value: !Ref PrivateSubnet1
+    Export:
+      Name: Privatesubnet1
+
+  PrivateSubnet2ID:
+    Description: Private Subnet 2
+    Value: !Ref PrivateSubnet2
+    Export:
+      Name: Privatesubnet2
+
+  NATGatewayID:
+    Description: NAT Gateway
+    Value: !Ref NATGateway
+    Export:
+      Name: mynat

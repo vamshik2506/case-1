@@ -1,0 +1,208 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  Monitoring Stack for Lemolite - CloudWatch alarms on EC2 instances and Auto Scaling Groups for blue and green environments, CloudTrail for AWS API logs
+
+Parameters:
+  CloudTrailS3BucketName:
+    Type: String
+    Description: Existing S3 bucket name for CloudTrail logs
+
+Resources:
+
+  # Blue Environment EC2 CPU Alarms
+
+  BlueFrontendCPUAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub 'BlueFrontendEC2_CPUUtilization_High'
+      AlarmDescription: CPU utilization alarm for Blue Frontend EC2 instances (>= 70% for 10 minutes)
+      Namespace: AWS/EC2
+      MetricName: CPUUtilization
+      Dimensions:
+        - Name: InstanceId
+          Value: !ImportValue FrontendInstanceID
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 2
+      Threshold: 70
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      ActionsEnabled: true
+
+  BlueBackendCPUAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub 'BlueBackendEC2_CPUUtilization_High'
+      AlarmDescription: CPU utilization alarm for Blue Backend EC2 instances (>= 70% for 10 minutes)
+      Namespace: AWS/EC2
+      MetricName: CPUUtilization
+      Dimensions:
+        - Name: InstanceId
+          Value: !ImportValue BackendInstanceID
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 2
+      Threshold: 70
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      ActionsEnabled: true
+
+  # Blue Environment ASG CPU Alarms
+
+  BlueFrontendASGCPUAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub 'BlueFrontendASG_CPUUtilization_High'
+      AlarmDescription: CPU utilization alarm for Blue Frontend Auto Scaling Group (>= 70% for 10 minutes)
+      Namespace: AWS/EC2
+      MetricName: CPUUtilization
+      Dimensions:
+        - Name: AutoScalingGroupName
+          Value: !ImportValue FrontendAutoScalingGroupID
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 2
+      Threshold: 70
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      ActionsEnabled: true
+
+  BlueBackendASGCPUAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub 'BlueBackendASG_CPUUtilization_High'
+      AlarmDescription: CPU utilization alarm for Blue Backend Auto Scaling Group (>= 70% for 10 minutes)
+      Namespace: AWS/EC2
+      MetricName: CPUUtilization
+      Dimensions:
+        - Name: AutoScalingGroupName
+          Value: !ImportValue BackendAutoScalingGroupID
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 2
+      Threshold: 70
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      ActionsEnabled: true
+
+
+  # Green Environment EC2 CPU Alarms
+
+  GreenFrontendCPUAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub 'GreenFrontendEC2_CPUUtilization_High'
+      AlarmDescription: CPU utilization alarm for Green Frontend EC2 instances (>= 70% for 10 minutes)
+      Namespace: AWS/EC2
+      MetricName: CPUUtilization
+      Dimensions:
+        - Name: InstanceId
+          Value: !ImportValue GreenFrontendInstanceID
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 2
+      Threshold: 70
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      ActionsEnabled: true
+
+  GreenBackendCPUAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub 'GreenBackendEC2_CPUUtilization_High'
+      AlarmDescription: CPU utilization alarm for Green Backend EC2 instances (>= 70% for 10 minutes)
+      Namespace: AWS/EC2
+      MetricName: CPUUtilization
+      Dimensions:
+        - Name: InstanceId
+          Value: !ImportValue GreenBackendInstanceID
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 2
+      Threshold: 70
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      ActionsEnabled: true
+
+  # Green Environment ASG CPU Alarms
+
+  GreenFrontendASGCPUAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub 'GreenFrontendASG_CPUUtilization_High'
+      AlarmDescription: CPU utilization alarm for Green Frontend Auto Scaling Group (>= 70% for 10 minutes)
+      Namespace: AWS/EC2
+      MetricName: CPUUtilization
+      Dimensions:
+        - Name: AutoScalingGroupName
+          Value: !ImportValue GreenFrontendAutoScalingGroupID
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 2
+      Threshold: 70
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      ActionsEnabled: true
+
+  GreenBackendASGCPUAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub 'GreenBackendASG_CPUUtilization_High'
+      AlarmDescription: CPU utilization alarm for Green Backend Auto Scaling Group (>= 70% for 10 minutes)
+      Namespace: AWS/EC2
+      MetricName: CPUUtilization
+      Dimensions:
+        - Name: AutoScalingGroupName
+          Value: !ImportValue GreenBackendAutoScalingGroupID
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 2
+      Threshold: 70
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      ActionsEnabled: true
+
+
+  # CloudTrail Trail for AWS API Auditing
+
+  LemoliteCloudTrail:
+    Type: AWS::CloudTrail::Trail
+    Properties:
+      TrailName: 'Lemolite-CloudTrail'
+      S3BucketName: !Ref CloudTrailS3BucketName
+      IsLogging: true
+      IncludeGlobalServiceEvents: true
+      EnableLogFileValidation: true
+      IsMultiRegionTrail: true
+      EventSelectors:
+        - ReadWriteType: All
+          IncludeManagementEvents: true
+
+Outputs:
+  BlueFrontendCPUAlarmName:
+    Description: CloudWatch Alarm for Blue Frontend EC2 Instance CPU Utilization
+    Value: !Ref BlueFrontendCPUAlarm
+
+  BlueBackendCPUAlarmName:
+    Description: CloudWatch Alarm for Blue Backend EC2 Instance CPU Utilization
+    Value: !Ref BlueBackendCPUAlarm
+
+  BlueFrontendASGCPUAlarmName:
+    Description: CloudWatch Alarm for Blue Frontend Auto Scaling Group CPU Utilization
+    Value: !Ref BlueFrontendASGCPUAlarm
+
+  BlueBackendASGCPUAlarmName:
+    Description: CloudWatch Alarm for Blue Backend Auto Scaling Group CPU Utilization
+    Value: !Ref BlueBackendASGCPUAlarm
+
+  GreenFrontendCPUAlarmName:
+    Description: CloudWatch Alarm for Green Frontend EC2 Instance CPU Utilization
+    Value: !Ref GreenFrontendCPUAlarm
+
+  GreenBackendCPUAlarmName:
+    Description: CloudWatch Alarm for Green Backend EC2 Instance CPU Utilization
+    Value: !Ref GreenBackendCPUAlarm
+
+  GreenFrontendASGCPUAlarmName:
+    Description: CloudWatch Alarm for Green Frontend Auto Scaling Group CPU Utilization
+    Value: !Ref GreenFrontendASGCPUAlarm
+
+  GreenBackendASGCPUAlarmName:
+    Description: CloudWatch Alarm for Green Backend Auto Scaling Group CPU Utilization
+    Value: !Ref GreenBackendASGCPUAlarm
+
+  CloudTrailArn:
+    Description: ARN of the CloudTrail Trail
+    Value: !GetAtt LemoliteCloudTrail.Arn
